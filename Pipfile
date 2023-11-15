@@ -1,0 +1,29 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+flask = "==2.3.3"
+json-logging = "*"
+sentry-sdk = {extras = ["flask"], version = "*"}
+marshmallow = "*"
+marshmallow-enum = "*"
+boto3 = "*"
+sqlalchemy = "*"
+sqlalchemy-utils = "*"
+pyjwt = "*"
+psycopg2-binary = "*"
+requests = "*"
+uwsgi = "*"
+flask-wtf = "*"
+
+[dev-packages]
+pytest = "*"
+flake8 = "*"
+pytest-cov = "*"
+coverage = "*"
+responses = "*"
+
+[requires]
+python_version = "3.11"

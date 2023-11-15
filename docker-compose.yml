@@ -1,0 +1,66 @@
+services:
+  artemis:
+    build: .
+    environment:
+#      SENTRY_DSN:
+      DB_HOST: artemis-db
+      DB_PORT: 5432
+      DB_USER: artemis
+      DB_PASSWORD: artemis
+      DB_NAME: artemis
+    env_file:
+      - .env
+    expose:
+      - 5000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      artemis-db:
+        condition: service_healthy
+      artemis-migrate:
+        condition: service_completed_successfully
+    restart: on-failure
+    networks:
+      default:
+  artemis-nginx:
+    image: nginx:latest
+    container_name: artemis-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - artemis
+    ports:
+      - 127.0.0.1:8765:8765
+    logging:
+      driver: none
+  artemis-db:
+    image: postgres
+    container_name: artemis-db
+    environment:
+      POSTGRES_DB: artemis
+      POSTGRES_USER: artemis
+      POSTGRES_PASSWORD: artemis
+    env_file:
+      - .env
+    volumes:
+      - ${PWD}/.artemis/data:/var/lib/postgresql/data
+      - ${PWD}/.artemis/db-logs:/var/log/postgresql
+      - ${PWD}/postgresql.conf:/postgresql.conf
+    expose:
+      - 5432
+    command: postgres -c 'config_file=/postgresql.conf'
+    networks:
+      default:
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U artemis" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 360s
+  artemis-migrate:
+    image: flyway/flyway
+    command: -configFiles=/flyway/conf/flyway.config -locations=filesystem:/flyway/sql -connectRetries=60 migrate
+    volumes:
+      - ${PWD}/migrations:/flyway/sql
+      - ${PWD}/docker-flyway.config:/flyway/conf/flyway.config
